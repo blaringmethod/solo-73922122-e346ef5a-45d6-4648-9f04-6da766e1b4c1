@@ -46,6 +46,29 @@ pytest tests/ -q
 4. **多窗口安全**：另一窗口修改任一输入后，旧选择与在途确认都会被
    服务端拒绝（409 stale）；把输入改回原样也不会恢复，需要重新选择确认。
 
+## 候选词表（/glossary）
+
+确认成功的会话会在页头出现“登记到候选词表 →”入口。打开
+`http://localhost:8000/glossary` 即可登记与查阅。
+
+- **批量登记**：每行一条 `页号 会话号@版本`。页号是登记主键，再次提交
+  同一页即更新；整张清单最多 30 页。
+- **整批拒绝**：出现下列任一情况时，指出相关页号并拒绝整批，数据库中的
+  原登记完全不变——
+  - 同批页号重复；
+  - 提交的版本尚未确认成功，或已因输入被修改而过期；
+  - 更新后一个会话对应多个页号；
+  - 写入后总页数超过 30（条目本身不合法时返回 400）。
+- **候选词**：按确认结果里标注的“原样文字”汇总，不做任何归一化。
+  支持页数按**不同页号**计——同一页里同一文字标注多次只算 1 页；
+  至少 2 页支持才进入词表。每个词列出支持页号、证据页和它在修订文中的
+  标注区间 `[start, end)`（码点，左闭右开），并显示上下文高亮。
+- **待补录**：登记后对应版本失效（会话被再次修改、结果被移除或会话被删）
+  的页退出计数，保留登记并在“待补录页”中列出原因；用当前已确认的版本
+  重新登记同一页即可恢复。
+- **同一快照**：`GET /api/glossary` 在单个读事务里用一条联表查询取出全部
+  登记与结果，词表、证据、待补录页因此来自同一次已提交状态。
+
 标签 JSON 格式（`id` 可省略，自动补 `L1..Ln`）：
 
 ```json
@@ -101,10 +124,17 @@ pytest tests/ -q
 | PUT | `/api/sessions/{sid}/selections` | 保存选择（整表替换），`revision` 过期返回 409 |
 | POST | `/api/sessions/{sid}/confirm` | 事务内校验版本与联合一致性，成功才原子写入结果 |
 | GET | `/api/sessions/{sid}/download` | 仅当前 `revision` 已确认成功时可下载 |
+| GET | `/api/glossary` | 同一快照的词表、证据页、待补录页与已登记页 |
+| POST | `/api/glossary/pages` | 批量登记/更新页号；任一条目不合格返回 409 并附相关页 |
+| GET | `/api/health` | 容器健康检查 |
 
 错误码：`400` 输入非法；`404` 会话/结果不存在；`409 stale_revision`
 输入已被他处修改；`409 conflict` 选择互相冲突（附冲突标签）；
-`422 unresolved` 存在未处理的待选标签。
+`422 unresolved` 存在未处理的待选标签；`409 batch_rejected`
+（`/api/glossary/pages`）整批登记被拒绝，`detail.errors[].code` 为
+`duplicate_pages` / `revision_unconfirmed` / `revision_expired` /
+`session_not_found` / `session_multi_page` / `capacity_exceeded`，
+`detail.pages` 列出涉及的全部页号。
 
 ## 目录结构
 
@@ -112,10 +142,11 @@ pytest tests/ -q
 app/
   alignment.py   # 最小编辑距离、落点集合、对齐计数、联合一致性
   main.py        # FastAPI 路由与确认事务
-  db.py          # SQLite（sessions / selections / results）
+  db.py          # SQLite（sessions / selections / results / glossary_pages）
+  glossary.py    # 候选词表聚合（按页去重计数、证据、待补录判定）
   schemas.py     # 输入校验
-  static/        # 单页网页（原生 JS）
-tests/           # 单元、API、暴力对照测试
+  static/        # 单页网页（原生 JS）：index.html 标注迁移，glossary.html 候选词表
+tests/           # 单元、API、暴力对照、候选词表测试
 examples/        # 四组示例（含重复文字）
 Dockerfile  docker-compose.yml  requirements*.txt
 ```

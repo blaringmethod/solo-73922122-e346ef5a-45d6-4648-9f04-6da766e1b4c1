@@ -230,6 +230,14 @@ function applyState(st, fromServer) {
   state.confirmed = st.has_result;
   $("session-info").textContent = "会话 " + st.session_id.slice(0, 8) + "…";
   $("revision-info").textContent = "版本 r" + st.revision;
+  const glink = $("glossary-link");
+  if (st.has_result) {
+    glink.href = "/glossary?session=" + encodeURIComponent(st.session_id) +
+                 "&revision=" + st.revision;
+    glink.classList.remove("hidden");
+  } else {
+    glink.classList.add("hidden");
+  }
   if (fromServer) {
     $("original").value = st.original;
     $("revised").value = st.revised;

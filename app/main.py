@@ -16,8 +16,9 @@ from pydantic import BaseModel
 
 from . import db
 from .alignment import analyze_labels, check_joint
-from .schemas import (ValidationError, normalize_labels, normalize_selections,
-                      validate_text)
+from .glossary import MAX_GLOSSARY_PAGES, GlossaryBatchError
+from .schemas import (ValidationError, normalize_glossary_entries,
+                      normalize_labels, normalize_selections, validate_text)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, "static")
@@ -45,6 +46,10 @@ class SelectionsIn(BaseModel):
 
 class ConfirmIn(BaseModel):
     revision: int
+
+
+class GlossaryRegisterIn(BaseModel):
+    entries: object  # [{"page","session_id","revision"}]，由 normalize 校验
 
 
 # ---------------- 工具 ----------------
@@ -84,6 +89,18 @@ def _state(sess: dict) -> dict:
 @app.get("/", include_in_schema=False)
 def index():
     return FileResponse(os.path.join(STATIC_DIR, "index.html"))
+
+
+@app.get("/glossary", include_in_schema=False)
+def glossary_page():
+    return FileResponse(os.path.join(STATIC_DIR, "glossary.html"))
+
+
+@app.get("/api/health")
+def health():
+    """供容器健康检查使用：能读到数据库即视为就绪。"""
+    db.connect().close()
+    return {"ok": True}
 
 
 # ---------------- API ----------------
@@ -292,3 +309,22 @@ def download(sid: str):
 
 
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+
+# ---------------- 候选词表 ----------------
+
+@app.get("/api/glossary")
+def get_glossary():
+    """一次请求返回同一已提交快照下的词表、证据与待补录页。"""
+    return db.get_glossary()
+
+
+@app.post("/api/glossary/pages")
+def register_glossary_pages(payload: GlossaryRegisterIn):
+    """批量登记/更新页号。整批校验与写入在同一 IMMEDIATE 事务里：
+    任一条目失败则整批拒绝并指出相关页，原有登记保持不变。"""
+    entries = normalize_glossary_entries(payload.entries, MAX_GLOSSARY_PAGES)
+    try:
+        return db.register_glossary_pages(entries)
+    except GlossaryBatchError as exc:
+        raise HTTPException(status_code=409, detail=exc.detail)

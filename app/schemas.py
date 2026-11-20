@@ -11,6 +11,9 @@ from __future__ import annotations
 
 MAX_TEXT_LEN = 120
 MAX_LABELS = 10
+MAX_PAGE_NUMBER = 999999
+
+PAGE_FIELDS = {"page", "session_id", "revision"}
 
 
 class ValidationError(ValueError):
@@ -93,4 +96,45 @@ def normalize_selections(raw, labels: list[dict]) -> dict:
         else:
             raise ValidationError(
                 f"标签 {lid!r} 的 choice 必须是 \"position\" 或 \"discard\"")
+    return out
+
+
+def normalize_glossary_entries(raw, max_batch: int = 30) -> list[dict]:
+    """规范化批量登记：每页 {page, session_id, revision}。
+
+    这里只做条目级校验；页号重复、版本有效性、一会话多页等跨条目的
+    业务校验在 db.register_glossary_pages 的同一事务内完成。
+    """
+    if not isinstance(raw, list):
+        raise ValidationError("entries 必须是数组")
+    if not raw:
+        raise ValidationError("请至少登记一页")
+    if len(raw) > max_batch:
+        raise ValidationError(f"单批最多 {max_batch} 页，本次提交 {len(raw)} 页")
+
+    out = []
+    for i, item in enumerate(raw, 1):
+        if not isinstance(item, dict):
+            raise ValidationError(f"第 {i} 条登记不是对象")
+        missing = PAGE_FIELDS - set(item)
+        if missing:
+            raise ValidationError(
+                f"第 {i} 条登记缺少字段：{'、'.join(sorted(missing))}")
+
+        page = item["page"]
+        if isinstance(page, bool) or not isinstance(page, int):
+            raise ValidationError(f"第 {i} 条登记的页号必须是整数")
+        if not (1 <= page <= MAX_PAGE_NUMBER):
+            raise ValidationError(
+                f"第 {i} 条登记的页号 {page} 超出范围 1..{MAX_PAGE_NUMBER}")
+
+        sid = item["session_id"]
+        if not isinstance(sid, str) or not sid.strip():
+            raise ValidationError(f"第 {i} 条登记的会话号必须是非空字符串")
+
+        rev = item["revision"]
+        if isinstance(rev, bool) or not isinstance(rev, int) or rev < 1:
+            raise ValidationError(f"第 {i} 条登记的确认版本必须是正整数")
+
+        out.append({"page": page, "session_id": sid.strip(), "revision": rev})
     return out

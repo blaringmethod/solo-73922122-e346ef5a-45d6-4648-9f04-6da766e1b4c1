@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>候选词表 · OCR 实体</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header>
+  <h1>候选词表 · OCR 实体</h1>
+  <nav class="topnav">
+    <a href="/">标注迁移</a>
+    <a href="/glossary" class="active">候选词表</a>
+  </nav>
+  <div id="session-bar">
+    <span id="list-info">加载中…</span>
+  </div>
+</header>
+
+<div id="banner" class="banner hidden"></div>
+
+<main class="wide">
+  <section class="panel">
+    <h2>1. 批量登记扫描页</h2>
+    <div class="hint" style="margin-bottom:10px">
+      每页一行，格式 <code>页号 会话号@版本</code>。登记以页号为键，重复提交即更新；
+      同一批内页号不得重复，版本必须已确认且未过期，一个会话只能对应一个页号。
+      清单最多 <span id="max-pages">30</span> 页。任一条目不合格会拒绝整批，原登记保持不变。
+    </div>
+    <label class="field">登记条目
+      <textarea id="entry-input" rows="6" spellcheck="false"
+        placeholder="页号 会话号@版本，例如：12 3f2a9c0b7d4e4f1a8b6c5d4e3f2a1b0c@3"></textarea>
+      <span class="count" id="prefill-hint"></span>
+    </label>
+    <div class="actions">
+      <button id="register" class="primary">登记本批</button>
+      <span id="register-status" class="hint"></span>
+    </div>
+    <div id="reject-detail" class="reject-detail hidden"></div>
+  </section>
+
+  <section class="panel">
+    <h2>2. 已登记页</h2>
+    <div id="pages-summary" class="hint">尚未登记任何页。</div>
+    <table class="grid hidden" id="pages-table">
+      <thead>
+        <tr>
+          <th>页号</th><th>会话</th><th>登记版本</th>
+          <th>状态</th><th>更新时间</th><th></th>
+        </tr>
+      </thead>
+      <tbody id="pages-body"></tbody>
+    </table>
+  </section>
+
+  <section class="panel">
+    <h2>3. 待补录页</h2>
+    <div id="pending-summary" class="hint">没有待补录的页。</div>
+    <div id="pending-list"></div>
+  </section>
+
+  <section class="panel">
+    <h2>4. 候选词表</h2>
+    <div id="terms-summary" class="hint">加载中…</div>
+    <div id="term-cards"></div>
+  </section>
+</main>
+
+<footer>
+  <span class="hint">词表、证据与待补录页来自同一份已提交快照；登记版本过期后，该页自动退出计数并等待补录。</span>
+</footer>
+
+<script src="/static/glossary.js"></script>
+</body>
+</html>

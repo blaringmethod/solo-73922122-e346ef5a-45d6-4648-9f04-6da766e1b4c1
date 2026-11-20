@@ -119,3 +119,78 @@ button:disabled { opacity: .45; cursor: not-allowed; }
   font-size: 12px; overflow: auto; max-height: 320px;
 }
 footer { text-align: center; padding: 0 16px 30px; }
+
+/* ---------- 顶部导航 ---------- */
+.topnav { display: flex; gap: 4px; }
+.topnav a {
+  color: #cbd5e1;
+  text-decoration: none;
+  font-size: 13px;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+.topnav a:hover { background: #334155; color: #fff; }
+.topnav a.active { background: #475569; color: #fff; }
+.toplink { color: #93c5fd; font-size: 13px; }
+
+/* ---------- 候选词表 ---------- */
+main.wide { max-width: 1080px; }
+code {
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  background: #f1f5f9; padding: 1px 5px; border-radius: 4px;
+}
+.mono { font-family: ui-monospace, "SF Mono", Consolas, monospace; font-size: 12.5px; }
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+.grid { width: 100%; border-collapse: collapse; font-size: 13px; }
+.grid th, .grid td {
+  text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+.grid th { color: var(--muted); font-weight: 600; font-size: 12px; }
+.grid th:first-child, .grid td.num { text-align: right; }
+.grid tr:hover td { background: #f8fafc; }
+.linkish {
+  border: none; background: none; color: var(--accent); cursor: pointer;
+  padding: 0; font-size: 12px; text-decoration: underline;
+}
+.reject-detail {
+  margin-top: 10px; padding: 10px 14px; border-radius: 8px;
+  background: #fef2f2; border: 1px solid #fca5a5; color: #991b1b;
+  font-size: 13px;
+}
+.reject-detail ul { margin: 0; padding-left: 20px; }
+.reject-detail li { margin: 3px 0; }
+
+.pending-card {
+  display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap;
+  padding: 8px 10px; margin-bottom: 6px; font-size: 13px;
+  border: 1px solid #fca5a5; background: #fff7f7; border-radius: 8px;
+}
+.page-chip {
+  font-weight: 700; background: #fee2e2; color: var(--bad);
+  border-radius: 999px; padding: 1px 9px; font-size: 12px;
+}
+.pending-msg { color: var(--bad); font-size: 12px; }
+
+.term-card {
+  border: 1px solid var(--line); border-radius: 8px;
+  padding: 10px 12px; margin-bottom: 12px;
+}
+.term-head { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.term-text {
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 15px; font-weight: 700;
+  background: #f1f5f9; border-radius: 4px; padding: 1px 6px;
+}
+.evidence { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12.5px; }
+.evidence th, .evidence td {
+  text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--line);
+  vertical-align: baseline;
+}
+.evidence th { color: var(--muted); font-weight: 600; font-size: 12px; }
+.evidence-text {
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  word-break: break-all;
+}
+.evidence-text mark { background: var(--mark); padding: 0 1px; border-radius: 2px; }
+
